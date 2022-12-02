@@ -1,0 +1,202 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# aoc2022
+
+## Day 1
+
+```elixir
+calories =
+  "/Users/clark/code/aoc2022/inputs/1.txt"
+  |> File.stream!()
+  |> Enum.reduce({0, []}, fn line, {this_elf_calories, all_elf_calories} ->
+    line = String.trim(line)
+
+    if line == "" do
+      {0, [this_elf_calories | all_elf_calories]}
+    else
+      {calories, _} = Integer.parse(line)
+      {calories + this_elf_calories, all_elf_calories}
+    end
+  end)
+  # the last 
+  |> then(fn {remaining, all_elf_calories} -> [remaining | all_elf_calories] end)
+  |> Enum.sort()
+  |> Enum.reverse()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[68442, 68218, 68177, 66575, 66355, 64717, 64543, 64252, 63315, 62797, 60691, 59873, 59757, 59627,
+ 59552, 59525, 59323, 58995, 58798, 58756, 58563, 58519, 58429, 58213, 58156, 58072, 57804, 57638,
+ 57629, 57570, 57541, 57333, 57174, 57053, 57034, 57028, 57023, 56891, 56831, 56790, 56492, 56414,
+ 56307, 56268, 56149, 56084, 55959, 55911, 55651, 55638, ...]
+```
+
+```elixir
+# Star 1
+[most_calories | _] = calories
+68442 = most_calories
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+68442
+```
+
+```elixir
+# Star 2
+204_837 =
+  calories
+  |> Enum.take(3)
+  |> Enum.sum()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+204837
+```
+
+## Day 2
+
+```elixir
+win_points = 6
+draw_points = 3
+loss_points = 0
+rock_points = 1
+paper_points = 2
+scissors_points = 3
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+3
+```
+
+```elixir
+lines =
+  "/Users/clark/code/aoc2022/inputs/2.txt"
+  |> File.stream!()
+  |> Stream.map(fn line -> String.trim(line) end)
+  |> Stream.map(fn line -> String.split(line) end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Stream<[
+  enum: %File.Stream{
+    path: "/Users/clark/code/aoc2022/inputs/2.txt",
+    modes: [:raw, :read_ahead, :binary],
+    line_or_bytes: :line,
+    raw: true
+  },
+  funs: [#Function<48.124013645/1 in Stream.map/2>, #Function<48.124013645/1 in Stream.map/2>]
+]>
+```
+
+```elixir
+scores =
+  lines
+  |> Stream.map(fn plays ->
+    Enum.map(plays, fn play ->
+      case play do
+        play when play in ["A", "X"] -> :rock
+        play when play in ["B", "Y"] -> :paper
+        play when play in ["C", "Z"] -> :scissors
+      end
+    end)
+  end)
+  |> Stream.map(fn
+    [:rock, :rock] -> draw_points + rock_points
+    [:rock, :paper] -> win_points + paper_points
+    [:rock, :scissors] -> loss_points + scissors_points
+    [:paper, :rock] -> loss_points + rock_points
+    [:paper, :paper] -> draw_points + paper_points
+    [:paper, :scissors] -> win_points + scissors_points
+    [:scissors, :rock] -> win_points + rock_points
+    [:scissors, :paper] -> loss_points + paper_points
+    [:scissors, :scissors] -> draw_points + scissors_points
+  end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Stream<[
+  enum: %File.Stream{
+    path: "/Users/clark/code/aoc2022/inputs/2.txt",
+    modes: [:raw, :read_ahead, :binary],
+    line_or_bytes: :line,
+    raw: true
+  },
+  funs: [#Function<48.124013645/1 in Stream.map/2>, #Function<48.124013645/1 in Stream.map/2>,
+   #Function<48.124013645/1 in Stream.map/2>, #Function<48.124013645/1 in Stream.map/2>]
+]>
+```
+
+```elixir
+15422 = Enum.sum(scores)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+15422
+```
+
+```elixir
+scores =
+  lines
+  |> Stream.map(fn plays ->
+    Enum.map(plays, fn play ->
+      case play do
+        "A" -> :rock
+        "B" -> :paper
+        "C" -> :scissors
+        "X" -> :loss
+        "Y" -> :draw
+        "Z" -> :win
+      end
+    end)
+  end)
+  |> Stream.map(fn
+    [:rock, :win] -> win_points + paper_points
+    [:rock, :draw] -> draw_points + rock_points
+    [:rock, :loss] -> loss_points + scissors_points
+    [:paper, :win] -> win_points + scissors_points
+    [:paper, :draw] -> draw_points + paper_points
+    [:paper, :loss] -> loss_points + rock_points
+    [:scissors, :win] -> win_points + rock_points
+    [:scissors, :draw] -> draw_points + scissors_points
+    [:scissors, :loss] -> loss_points + paper_points
+  end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Stream<[
+  enum: %File.Stream{
+    path: "/Users/clark/code/aoc2022/inputs/2.txt",
+    modes: [:raw, :read_ahead, :binary],
+    line_or_bytes: :line,
+    raw: true
+  },
+  funs: [#Function<48.124013645/1 in Stream.map/2>, #Function<48.124013645/1 in Stream.map/2>,
+   #Function<48.124013645/1 in Stream.map/2>, #Function<48.124013645/1 in Stream.map/2>]
+]>
+```
+
+```elixir
+15442 = Enum.sum(scores)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+15442
+```
