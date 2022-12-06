@@ -720,3 +720,77 @@ interpretation_2 =
 ```
 "DMRDFRHHH"
 ```
+
+## Day 6
+
+```elixir
+day6_input =
+  "/Users/clark/code/aoc2022/inputs/6.txt"
+  |> File.read!()
+
+:ok
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+```elixir
+# Star 1
+1816 =
+  day6_input
+  |> String.split("", trim: true)
+  |> Stream.with_index()
+  |> Stream.chunk_every(4, 1, :discard)
+  |> Stream.map(fn [_, _, _, {_, last_i}] = chunk ->
+    letter_set =
+      chunk
+      |> Enum.map(fn {letter, _} -> letter end)
+      |> MapSet.new()
+      |> Enum.count()
+
+    {letter_set, last_i + 1}
+  end)
+  |> Stream.filter(fn {len, _i} -> len == 4 end)
+  |> Stream.map(fn {_set, i} -> i end)
+  |> Enum.take(1)
+  |> List.first()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+1816
+```
+
+```elixir
+# Star 2
+2625 =
+  day6_input
+  |> String.split("", trim: true)
+  |> Stream.with_index()
+  |> Stream.chunk_every(14, 1, :discard)
+  |> Stream.map(fn chunk ->
+    {_, last_i} = List.last(chunk)
+
+    letter_set =
+      chunk
+      |> Enum.map(fn {letter, _} -> letter end)
+      |> MapSet.new()
+      |> Enum.count()
+
+    {letter_set, last_i + 1}
+  end)
+  |> Stream.filter(fn {len, _i} -> len == 14 end)
+  |> Stream.map(fn {_set, i} -> i end)
+  |> Enum.take(1)
+  |> List.first()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+2625
+```
