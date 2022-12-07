@@ -794,3 +794,214 @@ day6_input =
 ```
 2625
 ```
+
+## Day 7
+
+```elixir
+day7_input =
+  "/Users/clark/code/aoc2022/inputs/7.txt"
+  |> File.stream!()
+
+# day7_input = "$ cd /
+# $ ls
+# dir a
+# 14848514 b.txt
+# 8504156 c.dat
+# dir d
+# $ cd a
+# $ ls
+# dir e
+# 29116 f
+# 2557 g
+# 62596 h.lst
+# $ cd e
+# $ ls
+# 584 i
+# $ cd ..
+# $ cd ..
+# $ cd d
+# $ ls
+# 4060174 j
+# 8033020 d.log
+# 5626152 d.ext
+# 7214296 k" |> String.split("\n")
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%File.Stream{
+  path: "/Users/clark/code/aoc2022/inputs/7.txt",
+  modes: [:raw, :read_ahead, :binary],
+  line_or_bytes: :line,
+  raw: true
+}
+```
+
+```elixir
+commands =
+  day7_input
+  |> Stream.map(fn line -> String.trim(line) end)
+  |> Stream.map(fn line -> String.split(line) end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Stream<[
+  enum: %File.Stream{
+    path: "/Users/clark/code/aoc2022/inputs/7.txt",
+    modes: [:raw, :read_ahead, :binary],
+    line_or_bytes: :line,
+    raw: true
+  },
+  funs: [#Function<48.124013645/1 in Stream.map/2>, #Function<48.124013645/1 in Stream.map/2>]
+]>
+```
+
+```elixir
+defmodule Interp do
+  def traverse(lines) do
+    traverse(lines, %{cwd: [], sizes: %{}})
+  end
+
+  def all_levels(dirs) do
+    all_levels(dirs, [dirs])
+  end
+
+  defp all_levels([_dir | dirs], all) do
+    if dirs == [] do
+      all
+    else
+      all_levels(dirs, [dirs | all])
+    end
+  end
+
+  defp traverse([], state) do
+    state
+  end
+
+  defp traverse([["$", "cd", ".."] | lines], state) do
+    state =
+      Map.update!(state, :cwd, fn [_ | cwd] ->
+        cwd
+      end)
+
+    traverse(
+      lines,
+      state
+    )
+  end
+
+  defp traverse([["$", "cd", dir] | lines], state) do
+    state =
+      Map.update!(state, :cwd, fn cwd ->
+        [dir | cwd]
+      end)
+
+    traverse(
+      lines,
+      state
+    )
+  end
+
+  # unused
+  defp traverse([["$", "ls"] | lines], state) do
+    traverse(lines, state)
+  end
+
+  # unused
+  defp traverse([["dir", _dir] | lines], state) do
+    traverse(lines, state)
+  end
+
+  defp traverse([[filesize, _filename] | lines], %{cwd: cwd, sizes: sizes} = state) do
+    {filesize, _} = Integer.parse(filesize)
+
+    dirs = Interp.all_levels(cwd)
+
+    sizes =
+      Enum.reduce(dirs, sizes, fn dir, s ->
+        if Map.has_key?(s, dir) do
+          Map.update!(s, dir, fn dir_size -> dir_size + filesize end)
+        else
+          Map.put(s, dir, filesize)
+        end
+      end)
+
+    state = Map.put(state, :sizes, sizes)
+
+    traverse(lines, state)
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, Interp, <<70, 79, 82, 49, 0, 0, 14, ...>>, {:traverse, 2}}
+```
+
+```elixir
+# Star 1
+1_749_646 =
+  commands
+  |> Enum.to_list()
+  |> Interp.traverse()
+  |> Map.fetch!(:sizes)
+  |> Enum.reduce(0, fn {_dir, size}, total ->
+    if size <= 100_000 do
+      total + size
+    else
+      total
+    end
+  end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+1749646
+```
+
+```elixir
+# Star 2
+used_space =
+  commands
+  |> Enum.to_list()
+  |> Interp.traverse()
+  |> Map.fetch!(:sizes)
+  |> Map.fetch!(["/"])
+  |> IO.inspect(label: "used space")
+
+unused_space =
+  (70_000_000 - used_space)
+  |> IO.inspect(label: "unused space")
+
+minimum_space_to_delete =
+  (30_000_000 - unused_space)
+  |> IO.inspect(label: "minimum to delete")
+
+{_dir, 1_498_966} =
+  commands
+  |> Enum.to_list()
+  |> Interp.traverse()
+  |> Map.fetch!(:sizes)
+  |> Enum.filter(fn {_dir, size} -> size >= minimum_space_to_delete end)
+  |> Enum.sort_by(fn {_dir, size} -> size end)
+  |> List.first()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+used space: 41412830
+unused space: 28587170
+minimum to delete: 1412830
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{["mbsjjzft", "rzsrp", "rqtc", "btjq", "mghmb", "ddzmvh", "zjhqnlrr", "/"], 1498966}
+```
