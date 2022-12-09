@@ -1005,3 +1005,253 @@ minimum to delete: 1412830
 ```
 {["mbsjjzft", "rzsrp", "rqtc", "btjq", "mghmb", "ddzmvh", "zjhqnlrr", "/"], 1498966}
 ```
+
+## Day 8
+
+```elixir
+day8_input =
+  "/Users/clark/code/aoc2022/inputs/8.txt"
+  |> File.stream!()
+  |> Stream.map(fn line -> String.trim(line) end)
+  |> Stream.map(fn line -> String.split(line, "", trim: true) end)
+  |> Stream.with_index()
+  |> Stream.map(fn {row, y} ->
+    row
+    |> Enum.with_index()
+    |> Enum.map(fn {height, x} ->
+      {height, _} = Integer.parse(height)
+      %{height: height, x: x, y: y}
+    end)
+  end)
+  |> Enum.to_list()
+
+:ok
+
+# day8_input =
+#   "30373
+# 25512
+# 65332
+# 33549
+# 35390"
+#   |> String.split()
+#   |> Stream.map(fn line -> String.split(line, "", trim: true) end)
+#   |> Enum.with_index()
+#   |> Enum.map(fn {row, ri} ->
+#     row
+#     |> Enum.with_index()
+#     |> Enum.map(fn {n, ci} ->
+#       {n, _} = Integer.parse(n)
+#       {n, ci, ri}
+#     end)
+#   end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+```elixir
+defmodule C do
+  def left(rows) do
+    rows
+  end
+
+  def right(rows) do
+    Enum.map(rows, fn row -> Enum.reverse(row) end)
+  end
+
+  def top(rows) do
+    as_columns(rows)
+  end
+
+  def bottom(rows) do
+    rows
+    |> as_columns()
+    |> Enum.map(fn row -> Enum.reverse(row) end)
+  end
+
+  def visibles([%{height: height} = el | _] = row) do
+    visibles(row, height, MapSet.new([el]))
+  end
+
+  def visibles([], _, vis) do
+    vis
+  end
+
+  # special case for 9, at which point we're done, nothing else
+  # can be seen
+  def visibles([%{height: 9} = el | _rest], _current_max, vis) do
+    visibles([], 9, MapSet.put(vis, el))
+  end
+
+  def visibles([%{height: height} = el | rest], current_max, vis) do
+    if height > current_max do
+      visibles(rest, height, MapSet.put(vis, el))
+    else
+      visibles(rest, current_max, vis)
+    end
+  end
+
+  def visibles_all(row) do
+    visibles_all(row, [])
+  end
+
+  def visibles_all([], vis) do
+    Enum.reverse(vis)
+  end
+
+  def visibles_all([%{height: height} = el | rest], vis) do
+    number_visible =
+      Enum.reduce_while(rest, 0, fn
+        %{height: v}, acc when v < height -> {:cont, acc + 1}
+        %{height: v}, acc when v == height -> {:halt, acc + 1}
+        %{height: v}, acc when v > height -> {:halt, acc + 1}
+      end)
+
+    visibles_all(rest, [Map.put(el, :number_visible, number_visible) | vis])
+  end
+
+  def as_columns(rows) do
+    [row | _] = rows
+
+    len = Enum.count(row)
+
+    for i <- 0..(len - 1) do
+      for row <- rows do
+        # lengths must all be the same
+        ^len = Enum.count(row)
+        Enum.at(row, i)
+      end
+    end
+  end
+end
+
+### TEST CODE
+
+# C.as_columns([["a", "b", "c"], ["d", "e", "f"], ["g", "h", "i"]])
+# c = C.as_columns(day8_input) |> IO.inspect()
+# day8_input = C.as_columns(c)
+
+# l = C.left(day8_input)
+# r = C.right(day8_input)
+# t = C.top(day8_input)
+# b = C.bottom(day8_input)
+
+# all_visible_trees =
+#   for view <- [l, r, t, b] do
+#     for row <- view do
+#       C.visibles(row)
+#     end
+#   end
+
+# C.visibles([{1, 0, 0}, {2, 1, 0}, {3, 2, 0}, {4, 3, 0}]) |> dbg()
+# C.visibles([{2, 0, 0}, {1, 1, 0}, {3, 2, 0}, {4, 3, 0}]) |> dbg()
+# C.visibles([{2, 0, 0}, {9, 1, 0}, {8, 2, 0}, {9, 3, 0}]) |> dbg()
+# C.visibles_all([
+#   %{height: 2, x: 0, y: 0},
+#   %{height: 9, x: 1, y: 0},
+#   %{height: 8, x: 2, y: 0},
+#   %{height: 9, x: 3, y: 0}
+# ])
+# |> dbg()
+
+# C.visibles_all([
+#   %{height: 2, x: 0, y: 0},
+#   %{height: 1, x: 1, y: 0},
+#   %{height: 9, x: 2, y: 0},
+#   %{height: 8, x: 3, y: 0},
+#   %{height: 9, x: 4, y: 0}
+# ])
+# |> dbg()
+
+# C.visibles_all([
+#   %{height: 9, x: 0, y: 0},
+#   %{height: 1, x: 1, y: 0},
+#   %{height: 8, x: 2, y: 0},
+#   %{height: 8, x: 3, y: 0},
+#   %{height: 9, x: 4, y: 0}
+# ])
+# |> dbg()
+
+# C.visibles_all([%{height: 2, x: 0, y: 0}]) |> dbg()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, C, <<70, 79, 82, 49, 0, 0, 19, ...>>, {:as_columns, 1}}
+```
+
+```elixir
+# views from left, right, top, and bottom
+left = C.left(day8_input)
+right = C.right(day8_input)
+top = C.top(day8_input)
+bottom = C.bottom(day8_input)
+:ok
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+```elixir
+# Star 1
+1672 =
+  [left, right, top, bottom]
+  |> Enum.flat_map(fn view ->
+    Enum.map(view, fn row ->
+      C.visibles(row)
+    end)
+  end)
+  |> Enum.reduce(fn shot, acc ->
+    MapSet.union(shot, acc)
+  end)
+  |> Enum.count()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+1672
+```
+
+```elixir
+# Star 2
+327_180 =
+  [left, right, top, bottom]
+  |> Enum.flat_map(fn view ->
+    view
+    |> Enum.map(fn row ->
+      C.visibles_all(row)
+    end)
+    |> Enum.map(fn row ->
+      Enum.reduce(row, %{}, fn %{x: x, y: y} = el, acc ->
+        # make it look like %{[x, y] => %{...}}]
+        # so we can merge left/right/top/bottom later
+        Map.put(acc, [x, y], el)
+      end)
+    end)
+  end)
+  |> Enum.reduce(%{}, fn row, acc ->
+    Map.merge(row, acc, fn _k,
+                           %{height: height, x: x, y: y, number_visible: nv1},
+                           %{number_visible: nv2} ->
+      %{height: height, x: x, y: y, number_visible: nv1 * nv2}
+    end)
+  end)
+  |> Enum.sort_by(fn {_k, %{number_visible: nv}} -> nv end)
+  |> Enum.reverse()
+  |> List.first()
+  |> then(fn {_, %{number_visible: nv}} -> nv end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+327180
+```
