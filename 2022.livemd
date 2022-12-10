@@ -1255,3 +1255,115 @@ bottom = C.bottom(day8_input)
 ```
 327180
 ```
+
+## Day 9
+
+```elixir
+day9_input =
+  "/Users/clark/code/aoc2022/inputs/9.txt"
+  |> File.stream!()
+  |> Stream.map(fn line -> String.trim(line) end)
+  |> Stream.map(fn line -> String.split(line) end)
+  |> Stream.map(fn [direction, amount] ->
+    {amount, _} = Integer.parse(amount)
+    {String.to_atom(direction), amount}
+  end)
+  |> Stream.flat_map(fn {direction, amount} ->
+    for _ <- 1..amount do
+      {direction, 1}
+    end
+  end)
+
+#   |> Enum.take(5)
+
+# day9_input =
+#   "R 4
+# U 4
+# L 3
+# D 1
+# R 4
+# D 1
+# L 5
+# R 2"
+#   |> String.split("\n")
+#   |> Stream.map(fn line -> String.split(line) end)
+#   |> Stream.map(fn [direction, amount] ->
+#     {amount, _} = Integer.parse(amount)
+#     {String.to_atom(direction), amount}
+#   end)
+#   |> Stream.flat_map(fn {direction, amount} ->
+#     for _ <- 1..amount do
+#       {direction, 1}
+#     end
+#   end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Function<60.124013645/2 in Stream.transform/3>
+```
+
+```elixir
+# Star 1
+starting_state = %{
+  hpos: %{x: 0, y: 0},
+  tpos: %{x: 0, y: 0},
+  all_tpos: MapSet.new([%{x: 0, y: 0}])
+}
+
+6011 =
+  day9_input
+  |> Enum.reduce(
+    starting_state,
+    fn move, acc ->
+      acc = Map.put(acc, :hpos_previous, Map.fetch!(acc, :hpos))
+
+      acc =
+        case move do
+          {:L, amount} ->
+            update_in(acc, [:hpos, :x], fn x -> x - amount end)
+
+          {:R, amount} ->
+            update_in(acc, [:hpos, :x], fn x -> x + amount end)
+
+          {:U, amount} ->
+            update_in(acc, [:hpos, :y], fn y -> y + amount end)
+
+          {:D, amount} ->
+            update_in(acc, [:hpos, :y], fn y -> y - amount end)
+        end
+
+      diff = %{
+        x: :erlang.abs(acc[:hpos][:x] - acc[:tpos][:x]),
+        y: :erlang.abs(acc[:hpos][:y] - acc[:tpos][:y])
+      }
+
+      cond do
+        # they're 2 spots apart, move tpos
+        diff[:x] > 1 || diff[:y] > 1 ->
+          hpos_previous = Map.fetch!(acc, :hpos_previous)
+
+          acc
+          |> Map.put(:tpos, hpos_previous)
+          |> Map.update!(:all_tpos, fn all_tpos ->
+            MapSet.put(all_tpos, hpos_previous)
+          end)
+
+        diff[:x] <= 1 && diff[:y] <= 1 ->
+          acc
+
+        true ->
+          raise diff
+      end
+    end
+  )
+  |> Map.fetch!(:all_tpos)
+  |> Enum.count()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+6011
+```
